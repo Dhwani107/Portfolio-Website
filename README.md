@@ -137,34 +137,6 @@ Accessible only after login with complete CRUD operations:
 
 ---
 
-##  Design Highlights
-
-### Color Scheme
-- **Primary Dark:** #0a0a0a (Main background)
-- **Primary Light:** #f5f5f5 (Light mode background)
-- **Secondary Grey:** #2d2d2d (Cards and sections)
-- **Accent:** #ffffff (Text and highlights)
-- **Border:** #333333 (Subtle borders)
-
-### Animations & Effects
-- **Fade-in animations** on page load
-- **Slide transitions** for navigation and modals
-- **Float animations** on project cards
-- **Glow effects** on hover for interactive elements
-- **Shimmer effects** for loading states
-- **Pulse animations** for continuous motion
-- **Smooth scroll** behavior
-- **Parallax effects** on hero section
-
-### Continuous Motion
-- Background gradient animation
-- Floating card animations on hover
-- Pulsing status indicators
-- Rotating loading spinners
-- Animated transitions between pages
-
----
-
 ##  Technology Stack
 
 | Component | Technology |
