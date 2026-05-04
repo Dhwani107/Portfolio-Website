@@ -1,0 +1,8 @@
+.git
+.vscode
+.settings
+build
+target
+*.log
+*.class
+README.md

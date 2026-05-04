@@ -1,0 +1,5 @@
+
+The following files have been resolved:
+   com.mysql:mysql-connector-j:jar:8.0.33:compile[36m -- module mysql.connector.j[0;1;33m (auto)[m
+   commons-codec:commons-codec:jar:1.15:compile[36m -- module org.apache.commons.codec[0;1m [auto][m
+
