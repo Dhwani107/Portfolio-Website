@@ -4,8 +4,17 @@
 <%
     Integer userId = (Integer) session.getAttribute("userId");
     if (userId == null) {
-        response.sendRedirect("../login.jsp");
+        response.sendRedirect(request.getContextPath() + "/login.jsp");
         return;
+    }
+
+    String skillsSuccessMessage = (String) session.getAttribute("skillsSuccessMessage");
+    String skillsErrorMessage = (String) session.getAttribute("skillsErrorMessage");
+    if (skillsSuccessMessage != null) {
+        session.removeAttribute("skillsSuccessMessage");
+    }
+    if (skillsErrorMessage != null) {
+        session.removeAttribute("skillsErrorMessage");
     }
 %>
 <!DOCTYPE html>
@@ -163,13 +172,13 @@
             <div class="logo">DC Admin</div>
             <nav>
                 <ul>
-                    <li><a href="dashboard.jsp">Dashboard</a></li>
-                    <li><a href="../index.jsp">Back to Portfolio</a></li>
+                    <li><a href="<%=request.getContextPath()%>/dashboard">Dashboard</a></li>
+                    <li><a href="<%=request.getContextPath()%>/index.jsp">Back to Portfolio</a></li>
                 </ul>
             </nav>
             <div class="nav-buttons">
                 <button id="themeToggle" class="btn btn-secondary">☀️ Light Mode</button>
-                <a href="../logout" class="btn btn-secondary">Logout</a>
+                <a href="<%=request.getContextPath()%>/logout" class="btn btn-secondary">Logout</a>
             </div>
         </div>
     </header>
@@ -177,8 +186,15 @@
     <div class="page-shell">
         <div class="page-header">
             <h1 class="section-title">Manage Skills</h1>
-            <a href="addSkill.jsp" class="btn btn-primary">+ Add New Skill</a>
+            <a href="<%=request.getContextPath()%>/jsp/addSkill.jsp" class="btn btn-primary">+ Add New Skill</a>
         </div>
+
+        <% if (skillsSuccessMessage != null) { %>
+            <div class="success-message"><%=skillsSuccessMessage%></div>
+        <% } %>
+        <% if (skillsErrorMessage != null) { %>
+            <div class="error-message"><%=skillsErrorMessage%></div>
+        <% } %>
 
         <div class="skills-grid">
         <%
@@ -208,7 +224,7 @@
                     <strong>Proficiency:</strong> <%=rs.getString("proficiency_level")%>
                 </div>
                 <div class="skill-actions">
-                    <a href="editSkill.jsp?id=<%=skillId%>" class="btn-sm btn-edit">Edit</a>
+                    <a href="<%=request.getContextPath()%>/jsp/editSkill.jsp?id=<%=skillId%>" class="btn-sm btn-edit">Edit</a>
                     <button onclick="confirmDelete(this.getAttribute('data-id'))" data-id="<%=skillId%>" class="btn-sm btn-delete">Delete</button>
                 </div>
             </div>
@@ -221,7 +237,7 @@
             <div class="empty-state">
                 <h3>No skills found</h3>
                 <p>Start adding skills to showcase your expertise.</p>
-                <a href="addSkill.jsp" class="btn btn-primary" style="max-width: 200px; margin: 1rem auto;">+ Add Your First Skill</a>
+                <a href="<%=request.getContextPath()%>/jsp/addSkill.jsp" class="btn btn-primary" style="max-width: 200px; margin: 1rem auto;">+ Add Your First Skill</a>
             </div>
         <%
                 }
@@ -256,8 +272,8 @@
             <div style="color: var(--accent); font-size: 1.3rem; margin-bottom: 1rem;">Delete Skill</div>
             <p style="color: var(--secondary-grey); margin-bottom: 1rem;">Are you sure you want to delete this skill?</p>
             <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1.5rem;">
-                <button style="padding: 0.6rem 1rem; background: rgba(100, 100, 100, 0.6); color: white; border: none; border-radius: 5px; cursor: pointer;" onclick="closeModal()">Cancel</button>
-                <button style="padding: 0.6rem 1rem; background: rgba(200, 100, 100, 0.6); color: white; border: none; border-radius: 5px; cursor: pointer;" onclick="deleteSkill()">Delete</button>
+                <button type="button" style="padding: 0.6rem 1rem; background: rgba(100, 100, 100, 0.6); color: white; border: none; border-radius: 5px; cursor: pointer;" onclick="closeModal()">Cancel</button>
+                <button type="button" style="padding: 0.6rem 1rem; background: rgba(200, 100, 100, 0.6); color: white; border: none; border-radius: 5px; cursor: pointer;" onclick="deleteSkill()">Delete</button>
             </div>
         </div>
     </div>
@@ -277,15 +293,7 @@
 
         function deleteSkill() {
             if (skillIdToDelete) {
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = '../skillsCRUD';
-                form.innerHTML = `
-                    <input type="hidden" name="action" value="delete">
-                    <input type="hidden" name="id" value="${skillIdToDelete}">
-                `;
-                document.body.appendChild(form);
-                form.submit();
+                window.location.href = '<%=request.getContextPath()%>/skillsCRUD?action=delete&id=' + encodeURIComponent(skillIdToDelete);
             }
         }
 

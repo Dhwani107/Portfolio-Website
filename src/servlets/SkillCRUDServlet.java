@@ -47,7 +47,7 @@ public class SkillCRUDServlet extends HttpServlet {
         
         HttpSession session = request.getSession(false);
         if (session == null || session.getAttribute("userId") == null) {
-            response.sendRedirect(request.getContextPath() + "/jsp/login.jsp");
+            response.sendRedirect(request.getContextPath() + "/login.jsp");
             return;
         }
         
@@ -70,7 +70,7 @@ public class SkillCRUDServlet extends HttpServlet {
         
         HttpSession session = request.getSession(false);
         if (session == null || session.getAttribute("userId") == null) {
-            response.sendRedirect(request.getContextPath() + "/jsp/login.jsp");
+            response.sendRedirect(request.getContextPath() + "/login.jsp");
             return;
         }
         
@@ -92,27 +92,8 @@ public class SkillCRUDServlet extends HttpServlet {
     
     private void listSkills(HttpServletRequest request, HttpServletResponse response, HttpSession session) 
             throws ServletException, IOException {
-        int userId = (Integer) session.getAttribute("userId");
-        
-        Connection connection = null;
-        PreparedStatement preparedStatement = null;
-        ResultSet resultSet = null;
-        
-        try {
-            connection = DatabaseConnection.getConnection();
-            String query = "SELECT * FROM skills WHERE user_id = ? ORDER BY category, skill_name";
-            preparedStatement = connection.prepareStatement(query);
-            preparedStatement.setInt(1, userId);
-            resultSet = preparedStatement.executeQuery();
-            
-            request.getRequestDispatcher("/jsp/manageSkills.jsp").forward(request, response);
-        } catch (SQLException e) {
-            e.printStackTrace();
-            request.setAttribute("error", "Error fetching skills");
-            request.getRequestDispatcher("/jsp/dashboard.jsp").forward(request, response);
-        } finally {
-            DatabaseConnection.closeResources(connection, preparedStatement, resultSet);
-        }
+        // Keep the browser URL under /jsp so relative links inside JSPs keep working.
+        response.sendRedirect(request.getContextPath() + "/jsp/manageSkills.jsp");
     }
     
     private void addSkill(HttpServletRequest request, HttpServletResponse response, HttpSession session) 
@@ -168,7 +149,8 @@ public class SkillCRUDServlet extends HttpServlet {
             int result = preparedStatement.executeUpdate();
             
             if (result > 0) {
-                response.sendRedirect(request.getContextPath() + "/skillsCRUD?action=list");
+                session.setAttribute("skillsSuccessMessage", "Skill added successfully.");
+                response.sendRedirect(request.getContextPath() + "/jsp/manageSkills.jsp");
             } else {
                 request.setAttribute("error", "Failed to add skill");
                 request.getRequestDispatcher("/jsp/addSkill.jsp").forward(request, response);
@@ -219,7 +201,8 @@ public class SkillCRUDServlet extends HttpServlet {
         int userId = (Integer) session.getAttribute("userId");
         Integer skillId = parseIntParam(request, "skillId", "id");
         if (skillId == null) {
-            response.sendRedirect(request.getContextPath() + "/skillsCRUD?action=list");
+            session.setAttribute("skillsErrorMessage", "Invalid skill id.");
+            response.sendRedirect(request.getContextPath() + "/jsp/manageSkills.jsp");
             return;
         }
         String category = request.getParameter("category");
@@ -240,11 +223,17 @@ public class SkillCRUDServlet extends HttpServlet {
             preparedStatement.setInt(4, skillId);
             preparedStatement.setInt(5, userId);
             
-            preparedStatement.executeUpdate();
-            response.sendRedirect(request.getContextPath() + "/skillsCRUD?action=list");
+            int updated = preparedStatement.executeUpdate();
+            if (updated > 0) {
+                session.setAttribute("skillsSuccessMessage", "Skill updated successfully.");
+            } else {
+                session.setAttribute("skillsErrorMessage", "Skill not found or you don't have permission to update it.");
+            }
+            response.sendRedirect(request.getContextPath() + "/jsp/manageSkills.jsp");
         } catch (SQLException e) {
             e.printStackTrace();
-            response.sendRedirect(request.getContextPath() + "/skillsCRUD?action=list");
+            session.setAttribute("skillsErrorMessage", "Failed to update skill. Please try again.");
+            response.sendRedirect(request.getContextPath() + "/jsp/manageSkills.jsp");
         } finally {
             DatabaseConnection.closeResources(connection, preparedStatement, null);
         }
@@ -256,7 +245,8 @@ public class SkillCRUDServlet extends HttpServlet {
 
         Integer skillId = parseIntParam(request, "id", "skillId");
         if (skillId == null) {
-            response.sendRedirect(request.getContextPath() + "/skillsCRUD?action=list");
+            session.setAttribute("skillsErrorMessage", "Invalid skill id.");
+            response.sendRedirect(request.getContextPath() + "/jsp/manageSkills.jsp");
             return;
         }
         
@@ -269,12 +259,18 @@ public class SkillCRUDServlet extends HttpServlet {
             preparedStatement = connection.prepareStatement(query);
             preparedStatement.setInt(1, skillId);
             preparedStatement.setInt(2, userId);
-            
-            preparedStatement.executeUpdate();
-            response.sendRedirect(request.getContextPath() + "/skillsCRUD?action=list");
+
+            int deleted = preparedStatement.executeUpdate();
+            if (deleted > 0) {
+                session.setAttribute("skillsSuccessMessage", "Skill deleted successfully.");
+            } else {
+                session.setAttribute("skillsErrorMessage", "Skill not found or already deleted.");
+            }
+            response.sendRedirect(request.getContextPath() + "/jsp/manageSkills.jsp");
         } catch (SQLException e) {
             e.printStackTrace();
-            response.sendRedirect(request.getContextPath() + "/skillsCRUD?action=list");
+            session.setAttribute("skillsErrorMessage", "Failed to delete skill. Please try again.");
+            response.sendRedirect(request.getContextPath() + "/jsp/manageSkills.jsp");
         } finally {
             DatabaseConnection.closeResources(connection, preparedStatement, null);
         }

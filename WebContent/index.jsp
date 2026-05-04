@@ -8,6 +8,7 @@
     Integer userId = (Integer) session.getAttribute("userId");
     String username = (String) session.getAttribute("username");
     boolean isLoggedIn = userId != null;
+    int portfolioUserId = isLoggedIn ? userId.intValue() : 1;
 %>
 <!DOCTYPE html>
 <html lang="en">
@@ -134,8 +135,9 @@
                 boolean hasSkills = false;
                 try {
                     connection = DatabaseConnection.getConnection();
-                    String query = "SELECT DISTINCT category FROM skills WHERE user_id = 1 ORDER BY category";
+                    String query = "SELECT DISTINCT category FROM skills WHERE user_id = ? ORDER BY category";
                     pstmt = connection.prepareStatement(query);
+                    pstmt.setInt(1, portfolioUserId);
                     rs = pstmt.executeQuery();
                     
                     while (rs.next()) {
@@ -148,9 +150,10 @@
             <%
                         // Inner query for skills in this category
                         PreparedStatement innerStmt = connection.prepareStatement(
-                            "SELECT skill_name, proficiency_level FROM skills WHERE user_id = 1 AND category = ? ORDER BY skill_name"
+                            "SELECT skill_name, proficiency_level FROM skills WHERE user_id = ? AND category = ? ORDER BY skill_name"
                         );
-                        innerStmt.setString(1, category);
+                        innerStmt.setInt(1, portfolioUserId);
+                        innerStmt.setString(2, category);
                         ResultSet innerRs = innerStmt.executeQuery();
                         
                         while (innerRs.next()) {
