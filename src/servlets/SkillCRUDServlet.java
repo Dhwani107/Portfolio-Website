@@ -10,6 +10,36 @@ import db.DatabaseConnection;
  * SkillCRUDServlet - Handles Skill CRUD operations
  */
 public class SkillCRUDServlet extends HttpServlet {
+
+    private Integer parseIntParam(HttpServletRequest request, String... names) {
+        if (names == null) {
+            return null;
+        }
+
+        for (String name : names) {
+            if (name == null || name.isEmpty()) {
+                continue;
+            }
+
+            String value = request.getParameter(name);
+            if (value == null) {
+                continue;
+            }
+
+            value = value.trim();
+            if (value.isEmpty()) {
+                continue;
+            }
+
+            try {
+                return Integer.parseInt(value);
+            } catch (NumberFormatException e) {
+                return null;
+            }
+        }
+
+        return null;
+    }
     
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) 
@@ -27,6 +57,10 @@ public class SkillCRUDServlet extends HttpServlet {
             listSkills(request, response, session);
         } else if (action.equals("edit")) {
             editSkill(request, response, session);
+        } else if (action.equals("delete")) {
+            // Allow delete via GET for consistency with other CRUD servlets.
+            // The handler itself still validates session + parameters.
+            deleteSkill(request, response, session);
         }
     }
     
@@ -97,16 +131,39 @@ public class SkillCRUDServlet extends HttpServlet {
         
         Connection connection = null;
         PreparedStatement preparedStatement = null;
+        ResultSet resultSet = null;
         
         try {
             connection = DatabaseConnection.getConnection();
+
+            String normalizedCategory = (category != null && !category.trim().isEmpty()) ? category.trim() : "Other";
+            String normalizedSkillName = skillName.trim();
+            String normalizedProficiency = (proficiencyLevel != null && !proficiencyLevel.trim().isEmpty()) ? proficiencyLevel.trim() : "Intermediate";
+
+            // Prevent duplicates for the same user (keeps UI clean and avoids confusion on delete).
+            String duplicateQuery = "SELECT skill_id FROM skills WHERE user_id = ? AND category = ? AND skill_name = ? LIMIT 1";
+            preparedStatement = connection.prepareStatement(duplicateQuery);
+            preparedStatement.setInt(1, userId);
+            preparedStatement.setString(2, normalizedCategory);
+            preparedStatement.setString(3, normalizedSkillName);
+            resultSet = preparedStatement.executeQuery();
+            if (resultSet.next()) {
+                request.setAttribute("error", "Skill already exists in this category");
+                request.getRequestDispatcher("/jsp/addSkill.jsp").forward(request, response);
+                return;
+            }
+
+            DatabaseConnection.closeResources(null, preparedStatement, resultSet);
+            preparedStatement = null;
+            resultSet = null;
+
             String query = "INSERT INTO skills (user_id, category, skill_name, proficiency_level) VALUES (?, ?, ?, ?)";
             preparedStatement = connection.prepareStatement(query);
             
             preparedStatement.setInt(1, userId);
-            preparedStatement.setString(2, category != null ? category : "Other");
-            preparedStatement.setString(3, skillName);
-            preparedStatement.setString(4, proficiencyLevel != null ? proficiencyLevel : "Intermediate");
+            preparedStatement.setString(2, normalizedCategory);
+            preparedStatement.setString(3, normalizedSkillName);
+            preparedStatement.setString(4, normalizedProficiency);
             
             int result = preparedStatement.executeUpdate();
             
@@ -125,13 +182,17 @@ public class SkillCRUDServlet extends HttpServlet {
                 se.printStackTrace();
             }
         } finally {
-            DatabaseConnection.closeResources(connection, preparedStatement, null);
+            DatabaseConnection.closeResources(connection, preparedStatement, resultSet);
         }
     }
     
     private void editSkill(HttpServletRequest request, HttpServletResponse response, HttpSession session) 
             throws ServletException, IOException {
-        int skillId = Integer.parseInt(request.getParameter("id"));
+        Integer skillId = parseIntParam(request, "id", "skillId");
+        if (skillId == null) {
+            response.sendRedirect(request.getContextPath() + "/skillsCRUD?action=list");
+            return;
+        }
         Connection connection = null;
         PreparedStatement preparedStatement = null;
         ResultSet resultSet = null;
@@ -155,7 +216,12 @@ public class SkillCRUDServlet extends HttpServlet {
     
     private void updateSkill(HttpServletRequest request, HttpServletResponse response, HttpSession session) 
             throws ServletException, IOException {
-        int skillId = Integer.parseInt(request.getParameter("skillId"));
+        int userId = (Integer) session.getAttribute("userId");
+        Integer skillId = parseIntParam(request, "skillId", "id");
+        if (skillId == null) {
+            response.sendRedirect(request.getContextPath() + "/skillsCRUD?action=list");
+            return;
+        }
         String category = request.getParameter("category");
         String skillName = request.getParameter("skillName");
         String proficiencyLevel = request.getParameter("proficiencyLevel");
@@ -165,18 +231,20 @@ public class SkillCRUDServlet extends HttpServlet {
         
         try {
             connection = DatabaseConnection.getConnection();
-            String query = "UPDATE skills SET category=?, skill_name=?, proficiency_level=? WHERE skill_id=?";
+            String query = "UPDATE skills SET category=?, skill_name=?, proficiency_level=? WHERE skill_id=? AND user_id=?";
             preparedStatement = connection.prepareStatement(query);
             
             preparedStatement.setString(1, category);
             preparedStatement.setString(2, skillName);
             preparedStatement.setString(3, proficiencyLevel);
             preparedStatement.setInt(4, skillId);
+            preparedStatement.setInt(5, userId);
             
             preparedStatement.executeUpdate();
             response.sendRedirect(request.getContextPath() + "/skillsCRUD?action=list");
         } catch (SQLException e) {
             e.printStackTrace();
+            response.sendRedirect(request.getContextPath() + "/skillsCRUD?action=list");
         } finally {
             DatabaseConnection.closeResources(connection, preparedStatement, null);
         }
@@ -184,21 +252,29 @@ public class SkillCRUDServlet extends HttpServlet {
     
     private void deleteSkill(HttpServletRequest request, HttpServletResponse response, HttpSession session) 
             throws ServletException, IOException {
-        int skillId = Integer.parseInt(request.getParameter("id"));
+        int userId = (Integer) session.getAttribute("userId");
+
+        Integer skillId = parseIntParam(request, "id", "skillId");
+        if (skillId == null) {
+            response.sendRedirect(request.getContextPath() + "/skillsCRUD?action=list");
+            return;
+        }
         
         Connection connection = null;
         PreparedStatement preparedStatement = null;
         
         try {
             connection = DatabaseConnection.getConnection();
-            String query = "DELETE FROM skills WHERE skill_id = ?";
+            String query = "DELETE FROM skills WHERE skill_id = ? AND user_id = ?";
             preparedStatement = connection.prepareStatement(query);
             preparedStatement.setInt(1, skillId);
+            preparedStatement.setInt(2, userId);
             
             preparedStatement.executeUpdate();
             response.sendRedirect(request.getContextPath() + "/skillsCRUD?action=list");
         } catch (SQLException e) {
             e.printStackTrace();
+            response.sendRedirect(request.getContextPath() + "/skillsCRUD?action=list");
         } finally {
             DatabaseConnection.closeResources(connection, preparedStatement, null);
         }
