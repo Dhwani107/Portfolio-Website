@@ -22,5 +22,11 @@ Thumbs.db
 .env
 .env.*
 
+# Don't commit application server libs; Maven will package dependencies
+/WebContent/WEB-INF/lib/*.jar
+
+# Generated during security/dependency scans
+/direct-deps.txt
+
 # Optional: keep local DB volume out of repo if you ever create it locally
 /db_data/
