@@ -4,15 +4,16 @@
 
 A fully functional, classy dynamic personal portfolio website built with HTML, CSS, JavaScript, JSP/Servlets, and MySQL database. Features a modern black/white/grey theme with smooth animations and continuous motion effects throughout the website.
 
-**Author:** Dhwani Chauhan  
-**RollNo:** 231001001440
-**University:** Techno India University
-**Degree:** B.Tech Computer Science and Engineering
-**Date:** April 2026
-**Email:** dhwanichauhan1072004@gmail.com  
-**Phone:** +91 9674310571  
-**LinkedIn:** https://www.linkedin.com/in/dhwani-chauhan-aaa5ab280/  
-**GitHub:** https://github.com/Dhwani107
+| Field | Details |
+|---|---|
+| Author | Dhwani Chauhan |
+| RollNo | 231001001440 |
+| University | Techno India University |
+| Degree | B.Tech Computer Science and Engineering |
+| Date | April 2026 |
+| Email | dhwanichauhan1072004@gmail.com |
+| LinkedIn | https://www.linkedin.com/in/dhwani-chauhan-aaa5ab280/ |
+| GitHub | https://github.com/Dhwani107 |
 
 ---
 
@@ -132,7 +133,7 @@ Accessible only after login with complete CRUD operations:
   - Server-side validation for all forms
   - HTML escaping to prevent XSS attacks
   - SQL PreparedStatement to prevent SQL injection
-  - Email format validation
+   - Email format validation
 
 ---
 
